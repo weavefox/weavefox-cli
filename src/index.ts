@@ -20,7 +20,7 @@
 
 import { cac } from 'cac';
 import pc from 'picocolors';
-import pkg from '../package.json' assert { type: 'json' };
+import pkg from '../package.json' with { type: 'json' };
 import { getConfig, setConfig, clearConfig, purgeConfig, hasApiKey, getConfigPath } from './config.js';
 import {
   createMcpClient,

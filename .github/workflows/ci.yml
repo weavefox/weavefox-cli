@@ -1,0 +1,74 @@
+# CI - Type check, build, and binary smoke test
+#
+# Triggered on push and PR to ensure TypeScript code passes type check,
+# build succeeds, and the compiled binary runs correctly in a clean cloud
+# environment (catches "works on my machine" issues).
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  type-check-and-build:
+    name: Type Check & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm lint
+
+      - name: Build (tsup -> dist/)
+        run: pnpm build
+
+  binary-smoke-test:
+    name: Binary Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          version: '1.4'
+
+      - name: Build binary (linux-x64)
+        run: bash scripts/build-bin.sh linux-x64
+
+      - name: Smoke test - help
+        run: ./bin/wf-linux-x64 --help
+
+      - name: Smoke test - config
+        run: ./bin/wf-linux-x64 config

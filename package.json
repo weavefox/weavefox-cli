@@ -1,0 +1,47 @@
+{
+  "name": "@weavefox/cli",
+  "version": "0.0.1",
+  "description": "WeaveFox CLI - Call server-side open capabilities via MCP protocol, for developers and AI agents",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "wf": "./dist/index.js",
+    "weavefox": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsup",
+    "build:bin": "bun build src/index.ts --compile --outfile=bin/wf",
+    "build:bin:all": "bash scripts/build-bin.sh",
+    "prepublishOnly": "tsup",
+    "lint": "tsc --noEmit",
+    "lint:fix": "tsc --noEmit",
+    "clean": "rm -rf dist bin",
+    "clean:deps": "rm -rf node_modules",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "cac": "^6.7.14",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
+    "@types/node": "^22.19.18",
+    "husky": "^9.1.7",
+    "tsup": "^8.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "pnpm@12.0.0",
+  "publishConfig": {
+    "access": "public"
+  }
+}

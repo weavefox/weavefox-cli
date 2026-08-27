@@ -1,0 +1,128 @@
+# Release Pipeline
+#
+# Triggered by pushing a v* git tag.
+#
+# Runs sequentially: npm publish -> binary build -> GitHub Release.
+# This ordering ensures npm succeeds before creating a GitHub Release,
+# preventing "Release exists on GitHub but npm version is missing" mismatches.
+#
+# Security: OIDC Trusted Publishing, zero long-lived secrets.
+# Provenance: --provenance generates SLSA L3 attestation, publicly verifiable.
+#
+# Usage:
+#   git tag v1.0.0
+#   git push origin v1.0.0
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ───────────────────────────────────────────────────────────────
+  # Job 1: NPM publish (OIDC Trusted Publishing + Provenance)
+  # ───────────────────────────────────────────────────────────────
+  publish-npm:
+    name: Publish to NPM
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # OIDC: allows GitHub to mint short-lived ID-Token
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      # Verify git tag version matches package.json version
+      - name: Verify version matches tag
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./package.json').version")
+          if [ "$TAG" != "$PKG" ]; then
+            echo "Version mismatch: tag=$TAG package.json=$PKG"
+            exit 1
+          fi
+          echo "Version OK: $PKG"
+
+      - name: Type check
+        run: pnpm lint
+
+      - name: Build (tsup -> dist/)
+        run: pnpm build
+
+      - name: Publish to NPM
+        run: npm publish --provenance --access public
+
+  # ───────────────────────────────────────────────────────────────
+  # Job 2: Binary cross-compilation + GitHub Release
+  # Depends on publish-npm success to ensure version consistency.
+  # ───────────────────────────────────────────────────────────────
+  build-binaries:
+    name: Build & Release Binaries
+    needs: publish-npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Create GitHub Release
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          version: '1.4'
+
+      - name: Build all platform binaries
+        run: bash scripts/build-bin.sh
+
+      - name: Generate release summary
+        run: |
+          echo "## Build Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          ls -lh bin/ | awk 'NR>1{print "| "$1" | "$5" | "$9" |"}' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### SHA256 Checksums" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat bin/checksums-sha256.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            bin/wf-darwin-arm64
+            bin/wf-darwin-x64
+            bin/wf-linux-x64
+            bin/wf-linux-arm64
+            bin/wf-windows-x64.exe
+            bin/checksums-sha256.txt

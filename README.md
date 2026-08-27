@@ -9,9 +9,7 @@
 
 A CLI tool for calling WeaveFox server-side open capabilities via the MCP protocol. Built for developers and AI agents.
 
-> For development guide, see [AGENTS.md](./AGENTS.md) for project structure, build commands, and coding conventions.
->
-> [中文文档](./README.zh-CN.md)
+[中文文档](./README.zh-CN.md)
 
 ## Install
 
@@ -30,12 +28,23 @@ npm i -g @weavefox/cli
 Download from [GitHub Release](https://github.com/weavefox/weavefox-cli/releases) for your platform:
 
 ```bash
-# macOS Apple Silicon
-curl -fsSL https://github.com/weavefox/weavefox-cli/releases/latest/download/wf-darwin-arm64 -o wf
-chmod +x wf && ./wf tools
+# macOS (Apple Silicon)
+curl -fsSL https://github.com/weavefox/weavefox-cli/releases/latest/download/wf-darwin-arm64 -o /usr/local/bin/wf
+
+# macOS (Intel)
+curl -fsSL https://github.com/weavefox/weavefox-cli/releases/latest/download/wf-darwin-x64 -o /usr/local/bin/wf
+
+# Linux (x64)
+curl -fsSL https://github.com/weavefox/weavefox-cli/releases/latest/download/wf-linux-x64 -o /usr/local/bin/wf
+
+# Linux (ARM64)
+curl -fsSL https://github.com/weavefox/weavefox-cli/releases/latest/download/wf-linux-arm64 -o /usr/local/bin/wf
+
+chmod +x /usr/local/bin/wf
+wf tools
 ```
 
-Platforms: `darwin-arm64` `darwin-x64` `linux-x64` `linux-arm64` `windows-x64.exe`
+Windows: download `wf-windows-x64.exe` from [Releases](https://github.com/weavefox/weavefox-cli/releases).
 
 ### AI Agent Skill
 

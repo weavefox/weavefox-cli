@@ -9,9 +9,7 @@
 
 通过 MCP 协议调用 WeaveFox 服务端开放能力的命令行工具，面向开发者和 AI Agent。
 
-> 开发指南请参阅 [AGENTS.md](./AGENTS.md) 了解项目结构、构建命令和编码规范。
->
-> [English](./README.md)
+[English](./README.md)
 
 ## 安装
 
@@ -30,12 +28,23 @@ npm i -g @weavefox/cli
 从 [GitHub Release](https://github.com/weavefox/weavefox-cli/releases) 下载对应平台：
 
 ```bash
-# macOS Apple Silicon
-curl -fsSL https://github.com/weavefox/weavefox-cli/releases/latest/download/wf-darwin-arm64 -o wf
-chmod +x wf && ./wf tools
+# macOS (Apple Silicon)
+curl -fsSL https://github.com/weavefox/weavefox-cli/releases/latest/download/wf-darwin-arm64 -o /usr/local/bin/wf
+
+# macOS (Intel)
+curl -fsSL https://github.com/weavefox/weavefox-cli/releases/latest/download/wf-darwin-x64 -o /usr/local/bin/wf
+
+# Linux (x64)
+curl -fsSL https://github.com/weavefox/weavefox-cli/releases/latest/download/wf-linux-x64 -o /usr/local/bin/wf
+
+# Linux (ARM64)
+curl -fsSL https://github.com/weavefox/weavefox-cli/releases/latest/download/wf-linux-arm64 -o /usr/local/bin/wf
+
+chmod +x /usr/local/bin/wf
+wf tools
 ```
 
-平台: `darwin-arm64` `darwin-x64` `linux-x64` `linux-arm64` `windows-x64.exe`
+Windows: 从 [Releases](https://github.com/weavefox/weavefox-cli/releases) 下载 `wf-windows-x64.exe`。
 
 ### AI Agent Skill
 

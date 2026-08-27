@@ -2,3 +2,4 @@ node_modules/
 dist/
 bin/
 package-lock.json
+pnpm-lock.yaml

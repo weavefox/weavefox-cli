@@ -25,7 +25,8 @@
     "lint:fix": "tsc --noEmit",
     "clean": "rm -rf dist bin",
     "clean:deps": "rm -rf node_modules",
-    "prepare": "husky"
+    "prepare": "husky",
+    "release": "bash scripts/release.sh"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

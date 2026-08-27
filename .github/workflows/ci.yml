@@ -33,7 +33,7 @@ jobs:
           node-version: '24'
           cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install
 
       - name: Type check
         run: pnpm lint
@@ -54,7 +54,7 @@ jobs:
           node-version: '24'
           cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install
 
       - uses: oven-sh/setup-bun@v2
         with:

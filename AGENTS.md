@@ -25,8 +25,7 @@ weavefox-cli/
 │   ├── mcp-client.ts   # MCP client (StreamableHTTP + configurable auth + errors)
 │   └── format.ts       # Output: JSON mode / human mode
 ├── scripts/
-│   ├── build-bin.sh    # Bun cross-compile (5 platforms + SHA256)
-│   └── release.sh      # Tag current version and push (triggers release pipeline)
+│   └── build-bin.sh    # Bun cross-compile (5 platforms + SHA256)
 ├── skills/
 │   └── weavefox/
 │       ├── SKILL.md    # AI Agent skill (install via skills.sh)
@@ -56,7 +55,6 @@ pnpm build         # tsup -> dist/index.js
 pnpm build:bin     # Bun binary (current platform)
 pnpm build:bin:all # Cross-compile 5 platforms
 pnpm clean         # rm -rf dist bin
-pnpm release       # Tag current version and push (run on main after pull)
 ```
 
 ## CLI Subcommands
@@ -77,12 +75,11 @@ Main branch is protected — all changes go through PR.
 
 1. Bump version in `package.json`, commit, push to a branch, create PR
 2. Merge PR to main
-3. `git checkout main && git pull`
-4. `pnpm release` — tags current version and pushes tag
-5. Tag push triggers `release.yml`:
-   - NPM publish via OIDC -> binary cross-compile -> GitHub Release
+3. `release.yml` auto-triggers: checks if tag `v{version}` exists
+4. If new version: npm publish (OIDC) -> binary cross-compile -> create tag -> GitHub Release
+5. If no version change: skips release entirely
 
-Manual alternative: `git tag v0.0.2 && git push origin v0.0.2`
+No manual tagging or scripts needed.
 
 ## Key Design
 

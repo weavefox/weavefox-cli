@@ -62,7 +62,7 @@ pnpm release       # Tag current version and push (run on main after pull)
 ## CLI Subcommands
 
 | Command | Description |
-|---------|-------------|
+| --------- | ------------- |
 | `login --key <key>` | Persist API Key |
 | `logout [--purge]` | Clear credentials / remove config dir |
 | `tools` | List MCP tools + schemas |

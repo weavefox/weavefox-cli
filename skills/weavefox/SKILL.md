@@ -1,11 +1,18 @@
 ---
 name: weavefox
-description: Connect to WeaveFox platform to manage apps, and call server-side open capabilities via the wf CLI.
+description: Connect to WeaveFox open capabilities to manage apps and interact with app agents via the wf CLI.
 ---
 
 # WeaveFox
 
-Use this skill when the user wants to interact with WeaveFox platform — manage apps, update app settings, send messages to app agents, or query user profile.
+Use this skill when the user wants to connect to WeaveFox and use its open capabilities.
+
+## Available Capabilities
+
+- Get the current authenticated user profile
+- List apps with pagination
+- Update an app (name, description, tags, cover image, visibility, custom domain)
+- Send a message to an app agent and get the response
 
 ## Install
 

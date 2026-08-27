@@ -16,11 +16,9 @@
 ### npm
 
 ```bash
-# 零安装直接运行
-npx @weavefox/cli tools
-
-# 或全局安装
+# 全局安装
 npm i -g @weavefox/cli
+wf tools
 ```
 
 ### 独立二进制（无需 Node.js）

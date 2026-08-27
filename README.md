@@ -16,11 +16,9 @@ A CLI tool for calling WeaveFox server-side open capabilities via the MCP protoc
 ### npm
 
 ```bash
-# Run without installing
-npx @weavefox/cli tools
-
-# Or install globally
+# Install globally
 npm i -g @weavefox/cli
+wf tools
 ```
 
 ### Standalone binary (no Node.js required)

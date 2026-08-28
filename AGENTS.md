@@ -64,7 +64,7 @@ pnpm clean         # rm -rf dist bin
 | `login --key <key>` | Persist API Key |
 | `logout [--purge]` | Clear credentials / remove config dir |
 | `tools` | List MCP tools + schemas |
-| `call <toolName> [--kv ...]` | Invoke a tool (`key=value` scalars, `key:=value` JSON) |
+| `call <toolName> [--args <json>]` | Invoke a tool (arguments as a JSON object) |
 | `config [--set-url ...] [--set-auth-header ...]` | View / modify configuration |
 
 Global options: `--json`, `--url <url>`, `--auth-header <header>`, `--version`
@@ -102,10 +102,11 @@ Env vars > Config file > Defaults
 
 `--url`, `--auth-header`, `--json` are per-invocation overrides, don't write to file.
 
-### --kv Syntax (httpie-style)
+### --args Syntax
 
-- `key=value` — scalar, auto-infer string/number/boolean/null
-- `key:=value` — JSON, `JSON.parse` failure is an explicit error (no silent fallback)
+- `--args '<json>'` — pass all arguments as a single JSON object
+- No `--args` needed for parameterless tools
+- Invalid JSON or non-object values fail explicitly with a formatted error
 
 ### Dual-Channel Distribution
 

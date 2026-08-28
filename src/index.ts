@@ -5,7 +5,7 @@
  *   wf login --key <key>           Persist API Key
  *   wf logout [--purge]            Clear credentials (optionally remove dir)
  *   wf tools                       List MCP tools exposed by the server
- *   wf call <toolName> [--kv ...]  Invoke a tool (-kv key=value | key:=value)
+ *   wf call <toolName> [--args ...]  Invoke a tool (--args '<json>')
  *   wf config [--set-url <url>]    Show / override MCP server URL
  *
  * Global options:
@@ -30,6 +30,11 @@ import {
   WeaveFoxCliError,
 } from './mcp-client.js';
 import { outputToolResult, outputToolList } from './format.js';
+import { startUpdateCheck } from './update-check.js';
+
+// Start the update check early so it runs in parallel with the command.
+// The promise is cached for 1 hour — most invocations resolve from disk instantly.
+const updatePromise = startUpdateCheck(pkg.version);
 
 export const cli = cac('wf')
   .version(pkg.version)
@@ -41,7 +46,7 @@ export const cli = cac('wf')
 cli
   .command('login', 'Save your WeaveFox API Key locally')
   .option('--key <key>', 'Your WeaveFox API Key')
-  .action((options) => {
+  .action(async (options) => {
     if (!options.key) {
       console.error(
         pc.red('Error: ') + 'Please provide a key: ' + pc.cyan('wf login --key <YOUR_KEY>'),
@@ -50,12 +55,13 @@ cli
     }
     setConfig({ apiKey: options.key });
     console.log(pc.green('✓') + ' API Key saved to ' + pc.dim(getConfigPath()));
+    await printUpdateNotice(options.json);
   });
 
 cli
   .command('logout', 'Clear saved credentials')
   .option('--purge', 'Remove the entire config directory (use before uninstalling)')
-  .action((options) => {
+  .action(async (options) => {
     if (options.purge) {
       purgeConfig();
       console.log(pc.green('✓') + ' Config directory removed: ' + pc.dim(getConfigPath().replace(/config\.json$/, '')));
@@ -64,6 +70,7 @@ cli
       clearConfig();
       console.log(pc.green('✓') + ' Credentials cleared.');
     }
+    await printUpdateNotice(options.json);
   });
 
 cli
@@ -78,14 +85,32 @@ cli
 
 cli
   .command('call <toolName>', 'Call a specific MCP tool by name')
-  .option('--kv <key=value>', 'Pass arguments as key=value (scalars) or key:=value (JSON)', {
-    type: [String],
-  })
+  .option('--args <json>', 'Pass all arguments as a JSON object')
   .action(async (toolName, options) => {
-    const { json, url, authHeader } = options;
-    const args = parseToolArgs(options.kv);
+    const { json, url, authHeader, args: jsonArgs } = options;
 
     await withClient(json, url, authHeader, async (client) => {
+      let args: Record<string, unknown> = {};
+
+      if (jsonArgs) {
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(jsonArgs);
+        } catch {
+          throw new WeaveFoxCliError(
+            'invalid_args',
+            `--args expects valid JSON, got: "${jsonArgs}"`,
+          );
+        }
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+          throw new WeaveFoxCliError(
+            'invalid_args',
+            `--args expects a JSON object, got: "${jsonArgs}"`,
+          );
+        }
+        args = parsed as Record<string, unknown>;
+      }
+
       const result = await callTool(client, toolName, args);
       outputToolResult(result, json);
     });
@@ -95,7 +120,7 @@ cli
   .command('config', 'View or modify CLI configuration')
   .option('--set-url <url>', 'Set the MCP Server URL')
   .option('--set-auth-header <header>', 'Set the auth header name (default: Authorization)')
-  .action((options) => {
+  .action(async (options) => {
     if (options.setUrl) {
       setConfig({ mcpUrl: options.setUrl });
       console.log(pc.green('✓') + ' MCP Server URL updated.');
@@ -113,6 +138,7 @@ cli
     console.log(`  ${pc.cyan('Auth header')}    ${config.authHeader}${config.authHeader === 'Authorization' ? pc.dim(' (Bearer)') : ''}`);
     console.log(`  ${pc.cyan('Logged in')}      ${hasApiKey() ? pc.green('Yes') : pc.red('No')}`);
     console.log();
+    await printUpdateNotice(options.json);
   });
 
 /**
@@ -152,69 +178,8 @@ async function withClient(
     if (client) {
       await closeMcpClient(client);
     }
+    await printUpdateNotice(jsonMode);
   }
-}
-
-/**
- * Parses --kv pairs into a arguments object.
- *
- * Two syntaxes (httpie-inspired):
- *   key=value     Scalar; parsed via parseKvValue (auto-infers string/number/
- *                 boolean/null).
- *   key:=value    Explicit JSON; passes the value through JSON.parse. A parse
- *                 failure is thrown, NOT silently downgraded to a string —
- *                 the caller would otherwise get a bogus string that looks
- *                 like JSON but isn't.
- *
- * Multiple pairs are allowed on one command line; later pairs override
- * earlier ones for the same key.
- */
-function parseToolArgs(kvPairs: string[] | undefined): Record<string, unknown> {
-  const args: Record<string, unknown> = {};
-  if (!kvPairs || kvPairs.length === 0) return args;
-
-  for (const pair of kvPairs) {
-    const jsonSep = pair.indexOf(':=');
-    const eqSep = pair.indexOf('=');
-
-    if (jsonSep !== -1 && (eqSep === -1 || jsonSep < eqSep)) {
-      const key = pair.slice(0, jsonSep).trim();
-      const raw = pair.slice(jsonSep + 2).trim();
-      try {
-        args[key] = JSON.parse(raw);
-      } catch {
-        throw new WeaveFoxCliError(
-          'invalid_kv',
-          `--kv key:=value expects valid JSON, got: "${raw}"`,
-        );
-      }
-    } else if (eqSep !== -1) {
-      const key = pair.slice(0, eqSep).trim();
-      const value = pair.slice(eqSep + 1).trim();
-      args[key] = parseKvValue(value);
-    } else {
-      throw new WeaveFoxCliError(
-        'invalid_kv',
-        `--kv expects key=value or key:=value, got: "${pair}"`,
-      );
-    }
-  }
-
-  return args;
-}
-
-/**
- * Auto-infer scalar primitives for --kv key=value.
- * Use --kv key:=value for any JSON-typed value (objects, arrays, edge cases).
- */
-function parseKvValue(value: string): unknown {
-  const lower = value.toLowerCase();
-  if (lower === 'true') return true;
-  if (lower === 'false') return false;
-  if (lower === 'null') return null;
-  if (/^-?\d+$/.test(value)) return Number.parseInt(value, 10);
-  if (/^-?\d+\.\d+$/.test(value)) return Number.parseFloat(value);
-  return value;
 }
 
 /** show first 4 + last 4; mask everything in between. */
@@ -222,6 +187,21 @@ function maskApiKey(key: string): string {
   if (!key) return pc.dim('(not set)');
   if (key.length <= 8) return '*'.repeat(key.length);
   return key.slice(0, 4) + '****' + key.slice(-4);
+}
+
+/**
+ * Prints a one-line update notice if a newer version is available.
+ * Skipped in `--json` mode to avoid polluting machine-readable output.
+ * The check was started (in parallel) before cli.parse, so by the time
+ * the command finishes the result is usually already resolved.
+ */
+async function printUpdateNotice(jsonMode: boolean): Promise<void> {
+  if (jsonMode) return;
+  const latest = await updatePromise;
+  if (latest) {
+    console.log(pc.yellow(`\nUpdate available: ${pkg.version} → ${latest}`));
+    console.log(pc.dim(`Run: npm i -g @weavefox/cli`));
+  }
 }
 
 cli.parse();

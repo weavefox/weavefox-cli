@@ -64,7 +64,7 @@ wf login --key <YOUR_API_KEY>
 wf tools
 
 # 3. Call a tool
-wf call <toolName> --kv page=1 pageSize=10
+wf call <toolName> --args '{"page":1,"pageSize":10}' --json
 ```
 
 ## Commands
@@ -89,15 +89,17 @@ wf call <toolName> --kv page=1 pageSize=10
 ### wf call arguments
 
 ```bash
-# Call a tool with scalar arguments (auto-inferred: string, number, boolean, null)
-wf call <toolName> --kv key1=value1 key2=value2 key3=null
+# Pass all arguments as a JSON object
+wf call <toolName> --args '{"page":1,"pageSize":10,"filter":{"tag":"tool"}}' --json
 
-# JSON value via key:=value (httpie-style, for tools that accept JSON fields)
-wf call <toolName> --kv metadata:='{"timeout":5000}' tags:='["a","b"]'
+# Parameterless tools — no --args needed
+wf call <toolName> --json
 
-# key:=value parse error fails explicitly (no silent fallback to string)
-wf call <toolName> --kv bad:='{not json}'
-# Error: --kv key:=value expects valid JSON, got: "{not json}"
+# Invalid JSON or non-object values fail explicitly
+wf call <toolName> --args 'not json' --json
+# Error: --args expects valid JSON, got: "not json"
+wf call <toolName> --args '[1,2,3]' --json
+# Error: --args expects a JSON object, got: "[1,2,3]"
 ```
 
 ## Configuration

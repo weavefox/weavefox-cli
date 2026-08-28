@@ -13,7 +13,7 @@ import { join } from 'node:path';
 
 const DEFAULT_MCP_URL = 'https://www.weavefox.cn/mcp';
 const DEFAULT_AUTH_HEADER = 'Authorization';
-const CONFIG_DIR = join(homedir(), '.weavefox');
+export const CONFIG_DIR = join(homedir(), '.weavefox');
 const CONFIG_FILE = join(CONFIG_DIR, 'config.json');
 const CONFIG_FILE_MODE = 0o600;
 

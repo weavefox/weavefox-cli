@@ -9,10 +9,10 @@
  */
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { CONFIG_DIR } from './config.js';
 
-const CACHE_FILE = join(homedir(), '.weavefox', 'update-check.json');
+const CACHE_FILE = join(CONFIG_DIR, 'update-check.json');
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 const NPM_REGISTRY = 'https://registry.npmjs.org';
 const PACKAGE_NAME = '@weavefox/cli';
@@ -34,7 +34,7 @@ function readCache(): UpdateCache {
 
 function writeCache(cache: UpdateCache): void {
   try {
-    mkdirSync(join(homedir(), '.weavefox'), { recursive: true });
+    mkdirSync(CONFIG_DIR, { recursive: true });
     writeFileSync(CACHE_FILE, JSON.stringify(cache) + '\n', 'utf-8');
   } catch {
     // Best-effort; skip on permission errors.

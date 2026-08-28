@@ -1,6 +1,6 @@
 {
   "name": "@weavefox/cli",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "WeaveFox CLI - Call server-side open capabilities via MCP protocol, for developers and AI agents",
   "license": "MIT",
   "repository": {

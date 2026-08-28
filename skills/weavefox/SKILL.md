@@ -46,11 +46,11 @@ Returns all server-side tools with their names, descriptions, and parameter sche
 ## Call a Tool
 
 ```bash
-# Scalar arguments (auto-inferred: string, number, boolean, null)
-wf call <toolName> --kv key1=value1 key2=value2 --json
+# Pass all arguments as a JSON object
+wf call <toolName> --args '{"key":"value","num":42,"nested":{"obj":true}}' --json
 
-# JSON arguments (httpie-style key:=value)
-wf call <toolName> --kv key:='{"nested":"object"}' --json
+# Parameterless tools — no --args needed
+wf call <toolName> --json
 ```
 
 ## Parse Output

@@ -64,7 +64,7 @@ wf login --key <YOUR_API_KEY>
 wf tools
 
 # 3. 调用工具
-wf call <toolName> --kv page=1 pageSize=10
+wf call <toolName> --args '{"page":1,"pageSize":10}' --json
 ```
 
 ## 命令
@@ -89,15 +89,17 @@ wf call <toolName> --kv page=1 pageSize=10
 ### wf call 传参
 
 ```bash
-# 标量 key=value（自动推断：string、number、boolean、null）
-wf call <toolName> --kv key1=value1 key2=value2 key3=null
+# 所有参数作为 JSON 对象传入
+wf call <toolName> --args '{"page":1,"pageSize":10,"filter":{"tag":"tool"}}' --json
 
-# JSON 值用 key:=value 语法（httpie 风格，工具接受 JSON 字段时使用）
-wf call <toolName> --kv metadata:='{"timeout":5000}' tags:='["a","b"]'
+# 无参数工具——不需要 --args
+wf call <toolName> --json
 
-# key:=value 解析失败会直接报错，不会静默降级为字符串
-wf call <toolName> --kv bad:='{not json}'
-# Error: --kv key:=value expects valid JSON, got: "{not json}"
+# 无效 JSON 或非对象类型会直接报错
+wf call <toolName> --args 'not json' --json
+# Error: --args expects valid JSON, got: "not json"
+wf call <toolName> --args '[1,2,3]' --json
+# Error: --args expects a JSON object, got: "[1,2,3]"
 ```
 
 ## 配置

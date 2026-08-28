@@ -78,14 +78,32 @@ cli
 
 cli
   .command('call <toolName>', 'Call a specific MCP tool by name')
-  .option('--kv <key=value>', 'Pass arguments as key=value (scalars) or key:=value (JSON)', {
-    type: [String],
-  })
+  .option('--args <json>', 'Pass all arguments as a JSON object')
   .action(async (toolName, options) => {
-    const { json, url, authHeader } = options;
-    const args = parseToolArgs(options.kv);
+    const { json, url, authHeader, args: jsonArgs } = options;
 
     await withClient(json, url, authHeader, async (client) => {
+      let args: Record<string, unknown> = {};
+
+      if (jsonArgs) {
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(jsonArgs);
+        } catch {
+          throw new WeaveFoxCliError(
+            'invalid_args',
+            `--args expects valid JSON, got: "${jsonArgs}"`,
+          );
+        }
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+          throw new WeaveFoxCliError(
+            'invalid_args',
+            `--args expects a JSON object, got: "${jsonArgs}"`,
+          );
+        }
+        args = parsed as Record<string, unknown>;
+      }
+
       const result = await callTool(client, toolName, args);
       outputToolResult(result, json);
     });
@@ -153,68 +171,6 @@ async function withClient(
       await closeMcpClient(client);
     }
   }
-}
-
-/**
- * Parses --kv pairs into a arguments object.
- *
- * Two syntaxes (httpie-inspired):
- *   key=value     Scalar; parsed via parseKvValue (auto-infers string/number/
- *                 boolean/null).
- *   key:=value    Explicit JSON; passes the value through JSON.parse. A parse
- *                 failure is thrown, NOT silently downgraded to a string —
- *                 the caller would otherwise get a bogus string that looks
- *                 like JSON but isn't.
- *
- * Multiple pairs are allowed on one command line; later pairs override
- * earlier ones for the same key.
- */
-function parseToolArgs(kvPairs: string[] | undefined): Record<string, unknown> {
-  const args: Record<string, unknown> = {};
-  if (!kvPairs || kvPairs.length === 0) return args;
-
-  for (const pair of kvPairs) {
-    const jsonSep = pair.indexOf(':=');
-    const eqSep = pair.indexOf('=');
-
-    if (jsonSep !== -1 && (eqSep === -1 || jsonSep < eqSep)) {
-      const key = pair.slice(0, jsonSep).trim();
-      const raw = pair.slice(jsonSep + 2).trim();
-      try {
-        args[key] = JSON.parse(raw);
-      } catch {
-        throw new WeaveFoxCliError(
-          'invalid_kv',
-          `--kv key:=value expects valid JSON, got: "${raw}"`,
-        );
-      }
-    } else if (eqSep !== -1) {
-      const key = pair.slice(0, eqSep).trim();
-      const value = pair.slice(eqSep + 1).trim();
-      args[key] = parseKvValue(value);
-    } else {
-      throw new WeaveFoxCliError(
-        'invalid_kv',
-        `--kv expects key=value or key:=value, got: "${pair}"`,
-      );
-    }
-  }
-
-  return args;
-}
-
-/**
- * Auto-infer scalar primitives for --kv key=value.
- * Use --kv key:=value for any JSON-typed value (objects, arrays, edge cases).
- */
-function parseKvValue(value: string): unknown {
-  const lower = value.toLowerCase();
-  if (lower === 'true') return true;
-  if (lower === 'false') return false;
-  if (lower === 'null') return null;
-  if (/^-?\d+$/.test(value)) return Number.parseInt(value, 10);
-  if (/^-?\d+\.\d+$/.test(value)) return Number.parseFloat(value);
-  return value;
 }
 
 /** show first 4 + last 4; mask everything in between. */

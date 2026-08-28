@@ -5,7 +5,7 @@
  *   wf login --key <key>           Persist API Key
  *   wf logout [--purge]            Clear credentials (optionally remove dir)
  *   wf tools                       List MCP tools exposed by the server
- *   wf call <toolName> [--kv ...]  Invoke a tool (-kv key=value | key:=value)
+ *   wf call <toolName> [--args ...]  Invoke a tool (--args '<json>')
  *   wf config [--set-url <url>]    Show / override MCP server URL
  *
  * Global options:
@@ -30,6 +30,11 @@ import {
   WeaveFoxCliError,
 } from './mcp-client.js';
 import { outputToolResult, outputToolList } from './format.js';
+import { startUpdateCheck } from './update-check.js';
+
+// Start the update check early so it runs in parallel with the command.
+// The promise is cached for 1 hour — most invocations resolve from disk instantly.
+const updatePromise = startUpdateCheck(pkg.version);
 
 export const cli = cac('wf')
   .version(pkg.version)
@@ -41,7 +46,7 @@ export const cli = cac('wf')
 cli
   .command('login', 'Save your WeaveFox API Key locally')
   .option('--key <key>', 'Your WeaveFox API Key')
-  .action((options) => {
+  .action(async (options) => {
     if (!options.key) {
       console.error(
         pc.red('Error: ') + 'Please provide a key: ' + pc.cyan('wf login --key <YOUR_KEY>'),
@@ -50,12 +55,13 @@ cli
     }
     setConfig({ apiKey: options.key });
     console.log(pc.green('✓') + ' API Key saved to ' + pc.dim(getConfigPath()));
+    await printUpdateNotice(options.json);
   });
 
 cli
   .command('logout', 'Clear saved credentials')
   .option('--purge', 'Remove the entire config directory (use before uninstalling)')
-  .action((options) => {
+  .action(async (options) => {
     if (options.purge) {
       purgeConfig();
       console.log(pc.green('✓') + ' Config directory removed: ' + pc.dim(getConfigPath().replace(/config\.json$/, '')));
@@ -64,6 +70,7 @@ cli
       clearConfig();
       console.log(pc.green('✓') + ' Credentials cleared.');
     }
+    await printUpdateNotice(options.json);
   });
 
 cli
@@ -113,7 +120,7 @@ cli
   .command('config', 'View or modify CLI configuration')
   .option('--set-url <url>', 'Set the MCP Server URL')
   .option('--set-auth-header <header>', 'Set the auth header name (default: Authorization)')
-  .action((options) => {
+  .action(async (options) => {
     if (options.setUrl) {
       setConfig({ mcpUrl: options.setUrl });
       console.log(pc.green('✓') + ' MCP Server URL updated.');
@@ -131,6 +138,7 @@ cli
     console.log(`  ${pc.cyan('Auth header')}    ${config.authHeader}${config.authHeader === 'Authorization' ? pc.dim(' (Bearer)') : ''}`);
     console.log(`  ${pc.cyan('Logged in')}      ${hasApiKey() ? pc.green('Yes') : pc.red('No')}`);
     console.log();
+    await printUpdateNotice(options.json);
   });
 
 /**
@@ -170,6 +178,7 @@ async function withClient(
     if (client) {
       await closeMcpClient(client);
     }
+    await printUpdateNotice(jsonMode);
   }
 }
 
@@ -178,6 +187,21 @@ function maskApiKey(key: string): string {
   if (!key) return pc.dim('(not set)');
   if (key.length <= 8) return '*'.repeat(key.length);
   return key.slice(0, 4) + '****' + key.slice(-4);
+}
+
+/**
+ * Prints a one-line update notice if a newer version is available.
+ * Skipped in `--json` mode to avoid polluting machine-readable output.
+ * The check was started (in parallel) before cli.parse, so by the time
+ * the command finishes the result is usually already resolved.
+ */
+async function printUpdateNotice(jsonMode: boolean): Promise<void> {
+  if (jsonMode) return;
+  const latest = await updatePromise;
+  if (latest) {
+    console.log(pc.yellow(`\nUpdate available: ${pkg.version} → ${latest}`));
+    console.log(pc.dim(`Run: npm i -g @weavefox/cli`));
+  }
 }
 
 cli.parse();

@@ -14,6 +14,7 @@ Use this skill when the user wants to connect to WeaveFox and use its open capab
 - Update an app (name, description, tags, cover image, visibility, custom domain)
 - Send a message to an app agent (runs asynchronously, poll for status)
 - Get the status and content of an app agent message
+- List messages of an app with pagination
 
 ## Install
 

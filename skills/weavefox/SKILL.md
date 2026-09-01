@@ -9,12 +9,14 @@ Use this skill when the user wants to connect to WeaveFox and use its open capab
 
 ## Available Capabilities
 
+- Get WeaveFox documentation (concise summary and full-text, LLM-friendly)
 - Get the current authenticated user profile
 - List apps with pagination
 - Update an app (name, description, tags, cover image, visibility, custom domain)
+- List messages of an app with pagination
 - Send a message to an app agent (runs asynchronously, poll for status)
 - Get the status and content of an app agent message
-- List messages of an app with pagination
+- Stop a running app agent message stream
 
 ## Install
 

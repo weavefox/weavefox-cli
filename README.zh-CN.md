@@ -9,6 +9,8 @@
 
 通过 MCP 协议调用 WeaveFox 服务端开放能力的命令行工具，面向开发者和 AI Agent。
 
+[了解 WeaveFox 开放能力](https://www.weavefox.cn/open)
+
 [English](./README.md)
 
 ## 安装

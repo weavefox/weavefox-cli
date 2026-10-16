@@ -9,6 +9,11 @@ Use this skill when the user wants to connect to WeaveFox and use its open capab
 
 ## Available Capabilities
 
+### Connect WeaveFox
+
+Iterate apps on WeaveFox by connecting external AI agent tools via open APIs.
+
+- Get WeaveFox open capabilities guide (readme, read this first)
 - Get WeaveFox documentation (concise summary and full-text, LLM-friendly)
 - Get the current authenticated user profile
 - List apps with pagination
@@ -17,6 +22,16 @@ Use this skill when the user wants to connect to WeaveFox and use its open capab
 - Send a message to an app agent (runs asynchronously, poll for status)
 - Get the status and content of an app agent message
 - Stop a running app agent message stream
+
+### WeaveFox Pages
+
+Host prebuilt static sites by uploading artifact zip packages.
+
+- Create a WeaveFox Pages app
+- Get a short-lived upload token for uploading artifact zip files
+- Create a new version from a prebuilt artifact zip
+- List versions of an app with pagination
+- Deploy a specific version to make it live
 
 ## Install
 

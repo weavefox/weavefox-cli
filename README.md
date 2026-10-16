@@ -9,6 +9,8 @@
 
 A CLI tool for calling WeaveFox server-side open capabilities via the MCP protocol. Built for developers and AI agents.
 
+[Learn about WeaveFox Open Capabilities](https://www.weavefox.cn/open)
+
 [中文文档](./README.zh-CN.md)
 
 ## Install
